@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>AutoDrop</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#0f1720;--card:rgba(24,34,48,.88);--y:#ffea00;--o:#ff7a00;--t:#f4f6f8;--m:#9aa7b5;--ok:#3ddc84;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--t);font:15px/1.4 "Noto Sans Tamil","Segoe UI",system-ui,sans-serif;display:flex;justify-content:center}
+#app{width:100%;max-width:480px;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #223}
+header h1{margin:0;font-size:19px;font-weight:800;letter-spacing:.3px}
+header h1 b{color:var(--y)}
+.sw{min-height:44px;display:flex;align-items:center;gap:8px;background:none;border:0;color:var(--t);font:inherit;cursor:pointer}
+.sw i{width:42px;height:24px;border-radius:12px;background:#334;position:relative;transition:.2s}
+.sw i:after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--t);transition:.2s}
+.sw.on i{background:var(--o)}.sw.on i:after{left:21px}
+main{flex:1;overflow-y:auto;position:relative}
+.map{height:230px;position:relative;background:#16212e;overflow:hidden}
+.map svg{width:100%;height:100%;display:block}
+.dr{cursor:pointer}
+.panel{padding:12px 14px 20px}
+.card{background:var(--card);border:1px solid #2a3a4e;border-radius:16px;padding:12px;margin-bottom:10px;backdrop-filter:blur(6px)}
+.over{margin:-46px 14px 0;position:relative}
+input{width:100%;min-height:44px;border-radius:12px;border:1px solid #33445a;background:#0c121a;color:var(--t);padding:0 12px;font:inherit;margin-bottom:8px}
+.row{display:flex;gap:8px;align-items:center}
+.btn{min-height:48px;border-radius:14px;border:0;font:inherit;font-weight:800;padding:0 16px;cursor:pointer;background:var(--y);color:#111;width:100%}
+.btn.o{background:var(--o)}.btn.s{background:#26364a;color:var(--t);font-weight:600}
+.btn:disabled{opacity:.35;cursor:not-allowed}.btn.sm{width:auto;min-height:44px}
+.mic{width:48px;min-width:48px;height:48px;border-radius:50%;border:0;background:var(--o);font-size:20px;cursor:pointer;margin-bottom:8px}
+.pill{display:flex;background:#0c121a;border-radius:999px;padding:3px;margin-bottom:10px}
+.pill button{flex:1;min-height:44px;border:0;border-radius:999px;background:none;color:var(--m);font:inherit;font-weight:700;cursor:pointer}
+.pill button.on{background:var(--y);color:#111}
+.sug{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.sug button{min-height:44px;border-radius:999px;border:1px solid #33445a;background:none;color:var(--t);padding:0 12px;font:inherit;cursor:pointer}
+.err{color:var(--o);font-size:13px;min-height:18px;margin-bottom:6px}
+.price{font-size:26px;font-weight:800;color:var(--y)}
+.mut{color:var(--m);font-size:13px}
+.av{width:42px;height:42px;border-radius:50%;background:var(--o);color:#111;display:grid;place-items:center;font-weight:800}
+.off.exp{opacity:.35}.off.lock{border-color:var(--y);box-shadow:0 0 0 2px var(--y)}
+.rib{background:#2a2108;border:1px solid var(--o);color:var(--y);border-radius:12px;padding:10px;font-size:13px;margin-bottom:10px}
+.warn{background:#2b1604;border:1px solid var(--o);color:var(--o);border-radius:10px;padding:8px 10px;font-size:13px;margin-bottom:10px}
+nav{display:flex;border-top:1px solid #223;background:#0b1118}
+nav button{flex:1;min-height:52px;background:none;border:0;color:var(--m);font:inherit;cursor:pointer}
+nav button.on{color:var(--y);font-weight:800}
+.modal{position:absolute;inset:0;background:rgba(5,8,12,.94);z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:12px}
+.pin{font-size:56px;font-weight:800;letter-spacing:12px;color:var(--y)}
+.toast{position:absolute;left:14px;right:14px;bottom:70px;background:var(--y);color:#111;font-weight:700;border-radius:12px;padding:10px 12px;z-index:20}
+.flash{animation:fl .5s infinite alternate}@keyframes fl{to{background:#5a0a0a}}
+.tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:800;background:var(--o);color:#111}
+.hold{position:relative;overflow:hidden}.hold i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.35)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:3px solid var(--y);outline-offset:2px}
+@media(min-width:900px){#app{max-width:1000px;flex-direction:column}}
+</style></head><body><div id="app">
+<header><button class="sw" id="menu" aria-label="Demo menu">☰ Demo</button><h1>Auto<b>Drop</b></h1>
+<button class="sw" id="dm" aria-label="Driver view toggle">Driver<i></i></button></header>
+<main id="main"></main>
+<nav><button data-t="home" class="on">Home</button><button data-t="trips">Trips</button><button data-t="safety">Safety</button></nav>
+</div>
+<script>
+const PLACES=["Madurai Railway Station","Meenakshi Amman Temple","Periyar Bus Stand","Thirumalai Nayakkar Mahal","Mattuthavani Bus Stand","Madurai Airport","Anna Nagar","Vandiyur Mariamman Teppakulam"];
+const DRV=[{n:"Murugan",v:"Bajaj RE · TN58 AB 1204",x:60,y:70},{n:"Selvam",v:"Piaggio Ape · TN58 CD 8841",x:210,y:120},{n:"Karthik",v:"Bajaj RE · TN59 EF 3307",x:290,y:60},{n:"Ravi",v:"Piaggio Ape · TN58 GH 5512",x:120,y:170},{n:"Anbu",v:"Bajaj RE · TN58 JK 7720",x:260,y:180},{n:"Kumar",v:"Bajaj RE · TN59 LM 4096",x:40,y:150}];
+const S={tab:"home",driver:false,from:"",to:"",mode:"private",screen:"home",offers:[],locked:null,pin:"4821",bad:0,fines:[],trips:[],sos:false,reqOffers:{},lastQuick:0,custom:0,ride:"idle",eta:3};
+const $=s=>document.querySelector(s),main=$("#main");
+let timers=[];
+function clr(){timers.forEach(clearInterval);timers=[]}
+function toast(t){const e=document.createElement("div");e.className="toast";e.textContent=t;$("#app").append(e);setTimeout(()=>e.remove(),2400)}
+function mapSvg(opts={}){let d=DRV.map((q,i)=>`<g class="dr" data-i="${i}"><circle cx="${q.x}" cy="${q.y}" r="14" fill="#ffea00" opacity=".25"/><rect x="${q.x-9}" y="${q.y-7}" width="18" height="14" rx="4" fill="#ffea00"/></g>`).join("");
+let r=opts.route?`<path d="M60 70 Q150 20 230 110" stroke="#ff7a00" stroke-width="3" fill="none" stroke-dasharray="6 5"/>`:"";
+let me=opts.ride?`<g id="mk"><rect x="-9" y="-7" width="18" height="14" rx="4" fill="#ffea00"/></g><circle cx="230" cy="110" r="8" fill="#ff7a00"/>`:`<circle cx="170" cy="105" r="8" fill="#ff7a00"/>`;
+return `<div class="map"><svg viewBox="0 0 340 230" preserveAspectRatio="xMidYMid slice"><g stroke="#243447" stroke-width="10" fill="none"><path d="M0 60H340M0 130H340M0 200H340M80 0V230M180 0V230M270 0V230"/><path d="M0 30L340 190" stroke-width="6"/></g>${r}${opts.ride?"":d}${me}</svg></div>`}
+function bindMap(){document.querySelectorAll(".dr").forEach(g=>g.onclick=()=>{const q=DRV[g.dataset.i];toast(`${q.n} · ${q.v.split(" · ")[0]} · ETA ${2+g.dataset.i%3} min`)})}
+function render(){clr();
+if(S.driver)return driverView();
+if(S.tab==="trips")return trips();if(S.tab==="safety")return safety();
+({home,bids,ride}[S.screen]||home)()}
+function home(){const ok=PLACES.includes(S.from)&&PLACES.includes(S.to);
+main.innerHTML=mapSvg()+`<div class="over card"><div class="row"><input id="f" list="pl" placeholder="Where from? / எங்கிருந்து?" value="${S.from}"><button class="mic" id="mic" aria-label="Voice search in Tamil">🎤</button></div>
+<input id="t" list="pl" placeholder="Where to? / எங்கே?" value="${S.to}"><datalist id="pl">${PLACES.map(p=>`<option>${p}`).join("")}</datalist>
+<div class="err" id="er"></div>
+<div class="pill"><button data-m="private" class="${S.mode=="private"?"on":""}">Private Auto</button><button data-m="share" class="${S.mode=="share"?"on":""}">Share Auto</button></div>
+<div class="mut" style="margin-bottom:8px">${S.mode=="share"?"Share with up to 2 others; you may detour up to 10 min":"Estimated single-ride fare ₹100–₹120"}</div>
+<button class="btn" id="go" ${ok?"":"disabled"}>Find Autos</button></div>
+<div class="panel"><div class="mut" style="margin-bottom:6px">Recent places</div><div class="sug">${PLACES.slice(0,4).map(p=>`<button data-p="${p}">${p}</button>`).join("")}</div></div>`;
+bindMap();
+const chk=()=>{S.from=$("#f").value;S.to=$("#t").value;const bad=[S.from,S.to].some(v=>v&&!PLACES.includes(v));$("#er").textContent=bad?"Location not found — try another name":"";$("#go").disabled=!(PLACES.includes(S.from)&&PLACES.includes(S.to))};
+$("#f").oninput=chk;$("#t").oninput=chk;
+document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{if(!S.from)S.from=b.dataset.p;else S.to=b.dataset.p;home()});
+document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{S.mode=b.dataset.m;chk();home()});
+$("#mic").onclick=voice;$("#go").onclick=search}
+function voice(){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div style="font-size:48px">🎤</div><div>Listening… "மதுரை ரயில் நிலையம்-கு auto venum"</div><div class="mut" id="vt">Say a place name in Tamil</div><button class="btn o" id="sim">Simulate example</button><button class="btn s" id="vc">Type instead</button>`;$("#app").append(m);
+$("#sim").onclick=()=>{$("#vt").textContent="Madurai Railway Station-ku auto venum";setTimeout(()=>{S.from="Madurai Railway Station";m.remove();home()},900)};$("#vc").onclick=()=>m.remove()}
+function search(){main.innerHTML=mapSvg()+`<div class="panel"><div class="card">Finding autos nearby…<div style="height:6px;background:#0c121a;border-radius:3px;margin-top:10px"><div id="pb" style="height:6px;width:0;background:var(--y);border-radius:3px;transition:width 1.4s"></div></div></div></div>`;
+setTimeout(()=>$("#pb").style.width="100%",30);
+setTimeout(()=>{S.offers=[{id:"A",d:DRV[0],p:100,eta:3,t:105},{id:"B",d:DRV[1],p:110,eta:2,t:80},{id:"C",d:DRV[2],p:120,eta:4,t:120}];S.locked=null;S.screen="bids";render()},1500)}
+function bids(){const sh=S.mode=="share";
+main.innerHTML=mapSvg({route:1})+`<div class="panel"><div id="ol"></div><div class="rib">Price Locked after Accept — Driver cannot ask for extra cash.</div><button class="btn s" id="bc">Broadcast again</button></div>`;bindMap();paintOffers();
+timers.push(setInterval(()=>{S.offers.forEach(o=>{if(o.t>0)o.t--;});
+if(S.offers.some(o=>o.t===0&&!o.x)){S.offers.forEach(o=>{if(o.t===0&&!o.x){o.x=1;S.offers.push({id:"N"+Date.now()%100,d:DRV[3],p:115,eta:3,t:90})}})}
+paintOffers()},1000));
+$("#bc").onclick=()=>{S.offers.push({id:"R"+Date.now()%100,d:DRV[4],p:105,eta:4,t:90});paintOffers();toast("Broadcast sent")}}
+const tf=s=>`0${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
+function paintOffers(){const el=$("#ol");if(!el)return;const sh=S.mode=="share";
+el.innerHTML=S.offers.filter(o=>!o.gone).map(o=>`<div class="card off ${o.t<=0?"exp":""}"><div class="row"><div class="av">${o.d.n[0]}</div><div style="flex:1"><b>${o.d.n}</b><div class="mut">${o.d.v.split(" · ")[0]} · ETA ${o.eta} min</div></div><div style="text-align:right"><div class="price">₹${sh?Math.round(o.p/3):o.p}</div>${sh?`<div class="mut">Total ₹${o.p} — ₹${Math.round(o.p/3)} each</div>`:""}<div class="mut">${o.t>0?tf(o.t):"Offer expired"}</div></div></div>
+<div class="row" style="margin-top:10px"><button class="btn" data-a="${o.id}" ${o.t<=0?"disabled":""}>Accept</button><button class="btn s" data-m="${o.id}">Message Driver</button></div></div>`).join("")||`<div class="card">No offers yet — keep searching</div>`;
+el.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>accept(b.dataset.a));
+el.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>toast("Message sent: “Please come to the main gate.”"))}
+function accept(id){const o=S.offers.find(x=>x.id==id);S.locked=o;S.pin=id=="B"?"4821":String(1000+Math.floor(Math.random()*9000));S.bad=0;S.eta=o.eta;
+const price=S.mode=="share"?Math.round(o.p/3):o.p;
+const m=document.createElement("div");m.className="modal";m.innerHTML=`<div style="font-size:54px">🔒</div><h2 style="margin:0;color:var(--y)">Price Locked.</h2><div>Driver cannot ask for extra cash.</div><div class="price">₹${price}</div><div class="mut">${o.d.n} · ${o.d.v}<br>ETA ${o.eta} min</div><div class="mut">Pickup PIN</div><div class="pin">${S.pin}</div>${S.mode=="share"?`<div class="mut">Your seat confirmed — you will be asked to confirm when co-passengers join.</div>`:""}<button class="btn" id="ok">Track my auto</button>`;
+$("#app").append(m);$("#ok").onclick=()=>{m.remove();S.trips.unshift({from:S.from,to:S.to,mode:S.mode,price,drv:o.d.n,flag:""});S.screen="ride";S.ride="en";render()}}
+function ride(){const o=S.locked,t=S.trips[0];
+main.innerHTML=mapSvg({ride:1})+`<div class="panel">${S.sos?`<div class="warn flash"><b>Emergency — help on the way</b> · incident recorded, ETA frozen</div>`:""}
+<div class="warn">Drivers pay a ₹20 fine if they cancel last minute.</div>
+<div class="card"><div class="row"><div class="av">${o.d.n[0]}</div><div style="flex:1"><b>${o.d.n}</b><div class="mut">${o.d.v}</div></div><span class="tag" id="st">${S.ride=="go"?"Ride started":"ETA "+S.eta+" min"}</span></div>
+${S.mode=="share"?`<div class="mut" style="margin-top:6px">Co-passengers: 1 · You are pickup #2</div>`:""}
+<div class="mut" style="margin-top:8px">Show PIN to driver to verify pickup</div><div class="pin" id="pin">${S.ride=="go"?"✓":S.pin}</div><div class="mut">${t.from} → ${t.to} · ₹${t.price} locked</div></div>
+<div class="row" style="margin-bottom:8px"><button class="btn s" id="call">Call driver</button><button class="btn s" id="wa">Share on WhatsApp</button></div>
+<button class="btn o hold" id="sos"><i></i>Hold 2s for Emergency SOS</button>
+<div class="row" style="margin-top:8px"><button class="btn s" id="vp">Driver enters PIN (demo)</button><button class="btn s" id="cx">Driver cancels (demo)</button></div></div>`;
+const mk=$("#mk");let p=0;
+const step=()=>{p=Math.min(1,p+.02);const x=(1-p)*(1-p)*60+2*(1-p)*p*150+p*p*230,y=(1-p)*(1-p)*70+2*(1-p)*p*20+p*p*110;mk.setAttribute("transform",`translate(${x} ${y})`)};step();
+if(S.ride=="en"&&!S.sos)timers.push(setInterval(()=>{step();if(p>.3&&S.eta>2)S.eta=2;if(p>.7)S.eta=1;const s=$("#st");if(s&&S.ride=="en")s.textContent="ETA "+S.eta+" min"},500));
+$("#call").onclick=()=>toast("Calling driver… (simulated)");
+$("#wa").onclick=()=>{const msg=`I'm on an AutoDrop ride with ${o.d.n} (${o.d.v}). ETA ${S.eta} min. Track: autodrop.app/r/${S.pin}`;const u="https://wa.me/?text="+encodeURIComponent(msg);const w=window.open(u,"_blank");if(!w){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card">${msg}</div><button class="btn" id="cp">Copy link</button><button class="btn s" id="x">Close</button>`;$("#app").append(m);$("#cp").onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(msg).catch(()=>{});toast("Link copied")};$("#x").onclick=()=>m.remove()}};
+const sb=$("#sos");let h;const bar=sb.querySelector("i");
+const st=()=>{bar.style.transition="width 2s linear";bar.style.width="100%";h=setTimeout(sosOn,2000)},en=()=>{clearTimeout(h);bar.style.transition="none";bar.style.width="0"};
+sb.onpointerdown=st;sb.onpointerup=sb.onpointerleave=en;
+$("#vp").onclick=()=>pinTry();$("#cx").onclick=cancelRide}
+function pinTry(){const m=document.createElement("div");m.className="modal";m.innerHTML=`<div>Driver View — enter 4-digit PIN</div><input id="pi" inputmode="numeric" maxlength="4" style="text-align:center;font-size:28px;width:180px"><div class="err" id="pe"></div><button class="btn" id="pg">Verify PIN</button><button class="btn s" id="pc">Close</button>`;$("#app").append(m);
+$("#pc").onclick=()=>m.remove();
+$("#pg").onclick=()=>{if($("#pi").value===S.pin){S.ride="go";m.remove();toast("PIN verified — Ride started");render()}else{S.bad++;if(S.bad>=3){m.remove();const r=document.createElement("div");r.className="modal";r.innerHTML=`<div class="warn">3 wrong attempts. Admin has been notified.</div><button class="btn" id="rg">Regenerate PIN</button>`;$("#app").append(r);$("#rg").onclick=()=>{S.pin=String(1000+Math.floor(Math.random()*9000));S.bad=0;r.remove();render()}}else $("#pe").textContent=`PIN incorrect — check with driver (${S.bad}/3)`}}}
+function sosOn(){S.sos=true;S.trips[0].flag="Emergency";S.eta=S.eta;const m=document.createElement("div");m.className="modal flash";m.innerHTML=`<div style="font-size:54px">🚨</div><h2 style="margin:0">SOS activated</h2><div>Notified contacts: Amma, Appa, Priya (in-app)</div><button class="btn" id="d">Dismiss</button>`;$("#app").append(m);$("#d").onclick=()=>{m.remove();render()}}
+function cancelRide(){S.fines.push({drv:S.locked.d.n,amt:20,status:"Pending admin review"});S.trips[0].flag="Driver cancelled";toast("Driver cancelled — we're finding a replacement. ₹20 fine recorded.");
+S.offers=S.offers.filter(o=>o.id!==S.locked.id).map(o=>({...o,t:Math.max(o.t,60),x:0}));S.screen="bids";S.ride="idle";render()}
+function trips(){main.innerHTML=`<div class="panel"><h3>Trips</h3>${S.trips.map(t=>`<div class="card"><b>${t.from} → ${t.to}</b><div class="mut">${t.mode} · ₹${t.price} locked · ${t.drv} ${t.flag?`<span class="tag">${t.flag}</span>`:""}</div></div>`).join("")||`<div class="card">No trips yet — search for an auto from Home.</div>`}</div>`}
+function safety(){main.innerHTML=`<div class="panel"><h3>Safety</h3><div class="card"><b>Price Lock</b><div class="mut">Once you accept, the driver cannot raise the price or ask for extra cash.</div></div><div class="card"><b>PIN pickup</b><div class="mut">Only share your 4-digit PIN with the driver at pickup.</div></div><div class="card"><b>SOS contacts</b><div class="mut">Amma, Appa, Priya (stored in-app)</div></div><div class="card"><b>Driver fines (admin ledger)</b>${S.fines.map(f=>`<div class="mut">${f.drv}: ₹${f.amt} — ${f.status}</div>`).join("")||`<div class="mut">No fines recorded.</div>`}</div></div>`}
+function driverView(){const reqs=[{id:1,a:"Madurai Railway Station",b:"Meenakshi Amman Temple",d:"1.4 km",e:"3 min"},{id:2,a:"Anna Nagar",b:"Mattuthavani Bus Stand",d:"4.2 km",e:"6 min"}];
+main.innerHTML=mapSvg()+`<div class="panel"><div class="row" style="justify-content:space-between;margin-bottom:10px"><b>Nearby requests</b><span class="tag" style="background:var(--ok)">Available</span></div>
+${reqs.map(r=>`<div class="card"><b>${r.a} → ${r.b}</b><div class="mut">${r.d} · pickup ${r.e}</div><div class="row" style="margin-top:8px"><button class="btn sm q" data-v="10">+₹10</button><button class="btn sm q" data-v="20">+₹20</button><input class="c" placeholder="₹ custom" inputmode="numeric" style="margin:0"><button class="btn o sm cs">Send</button></div><div class="err e"></div></div>`).join("")}
+<div class="card"><b>My fines</b>${S.fines.map(f=>`<div class="mut">₹${f.amt} — ${f.status}</div>`).join("")||`<div class="mut">None</div>`}</div></div>`;bindMap();
+document.querySelectorAll(".card").forEach(c=>{const q=c.querySelectorAll(".q");q.forEach(b=>b.onclick=()=>{if(Date.now()-S.lastQuick<10000)return toast("Wait 10s before the next quick offer");S.lastQuick=Date.now();q.forEach(x=>x.disabled=1);setTimeout(()=>q.forEach(x=>x.disabled=0),10000);toast(`Offer sent: ₹${100+ +b.dataset.v}. Rider sees it now.`);S.offers.push({id:"D"+Date.now()%1000,d:DRV[5],p:100+ +b.dataset.v,eta:3,t:90})});
+const cs=c.querySelector(".cs");if(cs)cs.onclick=()=>{const v=c.querySelector(".c").value.trim(),e=c.querySelector(".e");if(!/^\d+$/.test(v)){e.textContent="Enter a number, for example 115";return}if(S.custom>=5){e.textContent="Limit reached: 5 custom offers per request";return}S.custom++;e.textContent="";toast(`Offer sent: ₹${v}`);S.offers.push({id:"C"+S.custom+Date.now()%100,d:DRV[5],p:+v,eta:3,t:90})}})}
+$("#dm").onclick=e=>{S.driver=!S.driver;e.currentTarget.classList.toggle("on",S.driver);render()};
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;S.driver=false;$("#dm").classList.remove("on");document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));render()});
+$("#menu").onclick=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<h3 style="margin:0">Demo scenarios</h3><button class="btn" id="d1">Normal flow: Madurai Railway Station</button><button class="btn s" id="d2">Offer expiry (fast timers)</button><button class="btn s" id="d3">Reset demo</button><button class="btn s" id="dx">Close</button>`;$("#app").append(m);
+$("#dx").onclick=()=>m.remove();
+$("#d1").onclick=()=>{S.from="Madurai Railway Station";S.to="Meenakshi Amman Temple";S.mode="private";S.screen="home";S.tab="home";S.driver=false;m.remove();search()};
+$("#d2").onclick=()=>{S.from="Madurai Railway Station";S.to="Anna Nagar";m.remove();search();setTimeout(()=>{S.offers.forEach(o=>o.t=o.id=="A"?4:o.t)},1600)};
+$("#d3").onclick=()=>{Object.assign(S,{from:"",to:"",screen:"home",tab:"home",locked:null,sos:false,trips:[],fines:[],ride:"idle",custom:0});m.remove();render()}};
+render();
+</script></body></html>
